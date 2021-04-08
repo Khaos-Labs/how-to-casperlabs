@@ -1,25 +1,15 @@
-# Setup a validator node from scratch on Ubuntu 20.04
-
-> **Note**  
-> Do not execute all the commands below as root. sudo is included where it is required. 
-
-## Set version and network you're going to set up
-
-Set a variable defining the version of the node package you're setting up. For `1.0.0`, use `1_0_0`
-
-```CASPER_VERSION=1_0_0```
-
-Set a variable defining the network name you're trying to set up. For example, for Main Net, use `casper`, while for Test Net use `testnet`
-
-```CASPER_NETWORK=casper```
-
-
 ## Install software
+
+### Update package repositories
+
+```
+sudo apt-get update
+```
 
 ### Install pre-requisites
 
 ```
-sudo apt install dnsutils
+sudo apt install dnsutils -y
 ```
 
 The node uses ```dig``` to get external IP for autoconfig during the installation process
@@ -27,7 +17,7 @@ The node uses ```dig``` to get external IP for autoconfig during the installatio
 ### Install helpers
 
 ```
-sudo apt install jq
+sudo apt install jq -y
 ```
 
 We will use ```jq``` to process JSON responses from API later in the process
@@ -47,17 +37,28 @@ If you were running previous versions of the casper-node on this machine, first 
 ### Install pre-requisites for building smart contracts
 
 ```
+cd ~
 sudo apt purge --auto-remove cmake
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
 sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'   
 sudo apt update
-sudo apt install cmake
+sudo apt install cmake -y
 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-sudo apt install libssl-dev
-sudo apt install pkg-config
-sudo apt install build-essential
+sudo apt install libssl-dev -y
+sudo apt install pkg-config -y
+sudo apt install build-essential -y
+
+BRANCH="1.0.20" \
+    && git clone --branch ${BRANCH} https://github.com/WebAssembly/wabt.git "wabt-${BRANCH}" \
+    && cd "wabt-${BRANCH}" \
+    && git submodule update --init \
+    && cd - \
+    && cmake -S "wabt-${BRANCH}" -B "wabt-${BRANCH}/build" \
+    && cmake --build "wabt-${BRANCH}/build" --parallel 8 \
+    && sudo cmake --install "wabt-${BRANCH}/build" --prefix /usr --strip -v \
+    && rm -rf "wabt-${BRANCH}"
 ```
 
 ### Build smart contracts
@@ -81,22 +82,3 @@ cd casper-node/
 make setup-rs
 make build-client-contracts -j
 ```
-
-## Generate keys and fund your account 
-
-### Generate node keys
-
-[include generate-keys.md]
-
-### Create account
-
-[include ../clarity/create-account.md]
-
-### Fund account
-
-[include ../clarity/fund-account.md]
-
-
-[include run-node.md]
-
-[include bond.md]
